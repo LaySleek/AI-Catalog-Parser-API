@@ -1,5 +1,18 @@
-.venv/
+# Python
 __pycache__/
 
-raw/
-images/
+# Virtual enviroment
+.venv/
+
+# Data
+data/*
+!data/.gitkeep
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+
+# Environment variables
+.env

@@ -1,0 +1,38 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-yaml
+      - id: check-toml
+      - id: check-json
+      - id: check-xml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: debug-statements
+      - id: requirements-txt-fixer
+
+  - repo: https://github.com/PyCQA/isort
+    rev: 9.0.0a3
+    hooks:
+      - id: isort
+        args:
+          [
+            "--py=312",
+            "--length-sort",
+            "--line-length=88",
+            "--multi-line=VERTICAL_HANGING_INDENT"
+          ]
+
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.21.2
+    hooks:
+      - id: pyupgrade
+        args: ["--py312-plus"]
+
+  - repo: https://github.com/hadialqattan/pycln
+    rev: v2.6.0
+    hooks:
+      - id: pycln
+        args: [--all]
