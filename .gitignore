@@ -2,7 +2,7 @@
 __pycache__/
 
 # Virtual enviroment
-.venv/
+.venv*/
 
 # Data
 data/*
