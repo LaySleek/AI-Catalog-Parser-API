@@ -1,7 +1,0 @@
-accelerate
-openpyxl
-pymupdf
-scipy
-torch
-torchvision
-transformers
