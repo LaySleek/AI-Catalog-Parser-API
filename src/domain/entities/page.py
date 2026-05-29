@@ -3,7 +3,7 @@ from dataclasses import field, dataclass
 
 import numpy as np
 
-from parser.utils import PathLike, to_path
+from src.utils import PathLike, to_path
 
 
 @dataclass(slots=True)

@@ -2,8 +2,8 @@ from typing import Any
 from pathlib import Path
 from dataclasses import field, dataclass
 
-from parser.utils import to_path
-from parser.domain.value_objects import Price, ImageCenter, Specifications
+from src.utils import to_path
+from src.domain.value_objects import Price, ImageCenter, Specifications
 
 
 @dataclass(slots=True)
