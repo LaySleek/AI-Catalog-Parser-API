@@ -1,4 +1,5 @@
-from typing import TypeAlias
+from typing import Any
 from pathlib import Path
 
-PathLike: TypeAlias = str | Path
+type PathLike = str | Path
+type ProductData = dict[str, Any]
