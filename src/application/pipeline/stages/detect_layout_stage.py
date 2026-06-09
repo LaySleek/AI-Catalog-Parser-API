@@ -1,0 +1,20 @@
+from src.domain.enums import PipelineStage
+from src.domain.entities import StageResult, PipelineContext
+from src.application.ports.output import LayoutDetectorPort
+
+from .base import PipelineStageHandler
+
+
+class DetectLayoutStage(PipelineStageHandler):
+
+    def __init__(self, detector: LayoutDetectorPort) -> None:
+        self._detector = detector
+
+    async def execute(self, context: PipelineContext) -> StageResult:
+        pages = context.pages or []
+        context.detections = self._detector.detect(pages)
+
+        return StageResult(
+            stage=PipelineStage.DETECT_LAYOUT,
+            success=True,
+        )
