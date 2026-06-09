@@ -8,20 +8,41 @@ from src.domain.value_objects import Price, ImageCenter, Specifications
 
 @dataclass(slots=True)
 class Product:
+    """Карточка товара, извлечённая из страницы каталога.
 
+    Attributes
+    ----------
+    name : str
+        Название товара.
+    sku : str
+        Артикул товара.
+    price : Price
+        Цена товара.
+    product_center : ImageCenter
+        Нормализованные координаты центра фотографии товара в диапазоне `[0, 1]`.
+    image_path : Path | None, optional
+        Путь к обрезанному изображению товара, by default None.
+    specifications : Specifications, optional
+        Технические характеристики товара, by default `Specifications()`.
+    description : list[str], optional
+        Список строк описания товара, by default `[]`.
+    brand : str | None, optional
+        Бренд товара, by default None.
+    manufacturer : str | None, optional
+        Производитель товара, by default None.
+    page_number : int | None, optional
+        Номер страницы каталога, с которой извлечён товар, by default None.
+    """
     name: str
     sku: str
     price: Price
-
     product_center: ImageCenter
-    image_path: Path
 
+    image_path: Path | None = None
     specifications: Specifications = field(default_factory=Specifications)
-
     description: list[str] = field(default_factory=list)
     brand: str | None = None
     manufacturer: str | None = None
-
     page_number: int | None = None
 
     def __post_init__(self) -> None:
@@ -32,13 +53,10 @@ class Product:
             raise ValueError("Product SKU must not be empty")
 
         if self.price is None:
-            raise ValueError("Product price must not be empty")
+            raise ValueError("Product price must not be None")
 
         if self.product_center is None:
-            raise ValueError("Product center must not be empty")
-
-        if self.image_path is None:
-            raise ValueError("Image path must not be empty")
+            raise ValueError("Product center must not be None")
 
     def __repr__(self) -> str:
         return (
@@ -56,9 +74,28 @@ class Product:
         *,
         page_number: int | None = None,
     ) -> "Product":
+        """Создаёт экземпляр `Product` из словаря.
 
+        Parameters
+        ----------
+        data : dict[str, Any]
+            Словарь с данными товара.
+        page_number : int | None, optional
+            Номер страницы каталога. Перекрывает значение `data["page_number"]`,
+            если задан явно, by default None.
+
+        Returns
+        -------
+        Product
+            Инициализированный экземпляр `Product`.
+
+        Raises
+        ------
+        ValueError
+            Если отсутствуют обязательные поля `price` или `product_center`.
+        """
         price: Price | None = None
-        price_data = data.get("price", {})
+        price_data: dict[str, Any] = data.get("price") or {}
 
         if (
             price_data.get("value") is not None
@@ -70,7 +107,7 @@ class Product:
             )
 
         center: ImageCenter | None = None
-        center_data = data.get("product_center", {})
+        center_data: dict[str, Any] = data.get("product_center") or {}
 
         if (
             center_data.get("x") is not None
@@ -82,20 +119,23 @@ class Product:
             )
 
         image_path_raw = data.get("image_path")
-        image_path = (
-            to_path(image_path_raw)
-            if image_path_raw is not None
-            else None
-        )
+        image_path = to_path(image_path_raw) if image_path_raw is not None else None
 
         if price is None:
-            raise ValueError("Invalid product price")
+            raise ValueError(
+                f"Invalid product price for SKU={data.get('sku')!r}: {price_data!r}"
+            )
 
         if center is None:
-            raise ValueError("Invalid product center")
+            raise ValueError(
+                f"Invalid product center for SKU={data.get('sku')!r}: {center_data!r}"
+            )
 
-        if image_path is None:
-            raise ValueError("Invalid image path")
+        resolved_page = (
+            page_number
+            if page_number is not None
+            else data.get("page_number")
+        )
 
         return cls(
             name=str(data.get("name", "")).strip(),
@@ -104,17 +144,17 @@ class Product:
             product_center=center,
             image_path=image_path,
             specifications=Specifications.from_dict(
-                data.get("specifications", {})
+                data.get("specifications") or {}
             ),
-            description=list(data.get("description", [])),
+            description=list(data.get("description") or []),
             brand=data.get("brand"),
             manufacturer=data.get("manufacturer"),
-            page_number=page_number,
+            page_number=resolved_page,
         )
 
     @property
     def description_text(self) -> str:
-        """Описание строки, агрегированное в единую строку с разделителем \\n."""
+        """Описание товара, агрегированное в единую строку с разделителем `\\n`."""
         return "\n".join(self.description)
 
     @property
@@ -123,7 +163,7 @@ class Product:
         return self.image_path is not None
 
     def to_dict(self) -> dict[str, Any]:
-        """Сериализация карточки товара в словарь.
+        """Сериализует карточку товара в словарь.
 
         Returns
         -------
@@ -143,8 +183,8 @@ class Product:
             "specifications": self.specifications.to_dict(),
             "product_center": {
                 "x": self.product_center.x,
-                "y": self.product_center.y
+                "y": self.product_center.y,
             },
-            "image_path": str(self.image_path),
+            "image_path": str(self.image_path) if self.image_path is not None else None,
             "page_number": self.page_number,
         }
