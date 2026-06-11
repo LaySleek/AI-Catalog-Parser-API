@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from src.domain.enums import PreprocessProfile
+
 from .bbox import BBox
 from .page import CatalogPage
 from .product import Product
@@ -15,3 +17,5 @@ class PipelineContext:
     extracted_products: list[Product] | None = None
     translated_products: list[Product] | None = None
     detections: list[list[BBox]] | None = None
+    matches: list[tuple[Product, BBox]] | None = None
+    preprocess_profile: PreprocessProfile | None = None

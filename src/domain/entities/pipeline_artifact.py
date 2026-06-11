@@ -16,7 +16,7 @@ class PipelineArtifact:
     artifact_type : ArtifactType
         Тип артефакта.
     stage : PipelineStage
-        Cтадиz пайплайна, создавшая артефакт.
+        Cтадия пайплайна, создавшая артефакт.
     path : Path
         Путь до артефакта в бэкенде хранилища.
     id : UUID, optional

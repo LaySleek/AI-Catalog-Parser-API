@@ -20,7 +20,7 @@ class CatalogPage:
         self._validate_image(self.image)
 
     def __repr__(self) -> str:
-        src = f'"{self.source_path}"' if self.source_path else "None"
+        src = f'"{str(self.source_path)}"' if self.source_path else "None"
         return (
             f"{self.__class__.__name__}("
             f"page_number={self.page_number}, "
