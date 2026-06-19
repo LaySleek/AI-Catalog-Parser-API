@@ -13,7 +13,7 @@ class ExportNomenclatureCommand:
         Идентификатор завершённой задачи пайплайна.
     output_path : Path | None, optional
         Путь для сохранения файла номенклатуры.
-        Если `None`, то путь определяется из артефактов задачи, by default None.
+        Если ``None``, то путь определяется из артефактов задачи, by default None.
     """
     job_id: UUID
     output_path: Path | None = None

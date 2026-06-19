@@ -14,13 +14,17 @@ class ProcessCatalogCommand:
     ----------
     source_path : Path
         Путь к файлу каталога.
+    output_path : Path | None, optional
+        Путь к выходному файлу номенклатуры.
+        Если ``None``, то путь определяется из настроек, by default None.
     profile : PreprocessProfile | None, optional
         Профиль предобработки изображений для детектора.
-        Если `None`, то профиль определяется автоматически, by default None.
+        Если ``None``, то профиль определяется автоматически, by default None.
     job_id : UUID, optional
         Идентификатор задачи, by default uuid4.
     """
     source_path: Path
+    output_path: Path | None = None
     profile: PreprocessProfile | None = None
     job_id: UUID = field(default_factory=uuid4)
 
