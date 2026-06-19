@@ -3,13 +3,18 @@ from collections import defaultdict
 from src.domain.enums import PipelineStage
 from src.domain.entities import BBox, Product, StageResult, PipelineContext
 from src.domain.services import ImageMatchingService
-from src.application.pipeline.stages.base import PipelineStageHandler
+
+from .base import PipelineStageHandler
 
 
 class MatchImagesStage(PipelineStageHandler):
 
     def __init__(self, matcher: ImageMatchingService) -> None:
         self._matcher = matcher
+
+    @property
+    def stage(self) -> PipelineStage:
+        return PipelineStage.MATCH_IMAGES
 
     async def execute(self, context: PipelineContext) -> StageResult:
         products = context.translated_products or []
@@ -32,9 +37,9 @@ class MatchImagesStage(PipelineStageHandler):
                 )
             )
 
-        context.job.metadata["matches"] = matches
+        context.matches = matches
 
         return StageResult(
-            stage=PipelineStage.MATCH_IMAGES,
+            stage=self.stage,
             success=True,
         )

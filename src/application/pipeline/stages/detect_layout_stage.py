@@ -10,11 +10,18 @@ class DetectLayoutStage(PipelineStageHandler):
     def __init__(self, detector: LayoutDetectorPort) -> None:
         self._detector = detector
 
+    @property
+    def stage(self) -> PipelineStage:
+        return PipelineStage.DETECT_LAYOUT
+
     async def execute(self, context: PipelineContext) -> StageResult:
         pages = context.pages or []
-        context.detections = self._detector.detect(pages)
+        context.detections = self._detector.detect(
+            pages,
+            profile=context.preprocess_profile,
+        )
 
         return StageResult(
-            stage=PipelineStage.DETECT_LAYOUT,
+            stage=self.stage,
             success=True,
         )

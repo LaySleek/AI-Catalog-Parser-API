@@ -11,6 +11,10 @@ class TranslateProductsStage(PipelineStageHandler):
     def __init__(self, translator: TranslatorPort) -> None:
         self._translator = translator
 
+    @property
+    def stage(self) -> PipelineStage:
+        return PipelineStage.TRANSLATE_PRODUCTS
+
     async def execute(self, context: PipelineContext) -> StageResult:
         products = context.extracted_products or []
 
@@ -20,12 +24,12 @@ class TranslateProductsStage(PipelineStageHandler):
         context.translated_products = [
             Product.from_dict(
                 data,
-                page_number=data.get("page_number"),
+                page_number=original.page_number,
             )
-            for data in translated_raw
+            for original, data in zip(products, translated_raw)
         ]
 
         return StageResult(
-            stage=PipelineStage.TRANSLATE_PRODUCTS,
+            stage=self.stage,
             success=True,
         )

@@ -11,6 +11,10 @@ class ExtractProductsStage(PipelineStageHandler):
     def __init__(self, extractor: ProductExtractorPort) -> None:
         self._extractor = extractor
 
+    @property
+    def stage(self) -> PipelineStage:
+        return PipelineStage.EXTRACT_PRODUCTS
+
     async def execute(self, context: PipelineContext) -> StageResult:
         pages = context.pages or []
 
@@ -42,7 +46,7 @@ class ExtractProductsStage(PipelineStageHandler):
         )
 
         return StageResult(
-            stage=PipelineStage.EXTRACT_PRODUCTS,
+            stage=self.stage,
             success=True,
             message=message,
             errors=parse_errors,
