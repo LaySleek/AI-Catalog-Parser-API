@@ -1,5 +1,6 @@
 from typing import Protocol, runtime_checkable
 
+from src.domain.enums import PreprocessProfile
 from src.domain.entities import BBox, CatalogPage
 
 
@@ -7,7 +8,12 @@ from src.domain.entities import BBox, CatalogPage
 class LayoutDetectorPort(Protocol):
     """Порт детекции bounding box-ов изображений на страницах каталога."""
 
-    def detect(self, pages: list[CatalogPage]) -> list[list[BBox]]:
+    def detect(
+        self,
+        pages: list[CatalogPage],
+        *,
+        profile: PreprocessProfile | None = None,
+    ) -> list[list[BBox]]:
         """Детектирует bbox изображений товаров на страницах каталога.
 
         Parameters
