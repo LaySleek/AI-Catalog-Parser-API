@@ -1,0 +1,28 @@
+{
+  "products": [
+    {
+      "name": "string",
+      "description": ["verbatim-string"],
+      "brand": "verbatim-string",
+      "manufacturer": "verbatim-string",
+      "product_center": {
+        "x": "number",
+        "y": "number"
+      },
+      "price": {
+        "value": "number",
+        "currency": "currency"
+      },
+      "specifications": {
+        "length": {"value": "number", "unit": "string"},
+        "width": {"value": "number", "unit": "string"},
+        "height": {"value": "number", "unit": "string"},
+        "weight": {"value": "number", "unit": "string"},
+        "volume": {"value": "number", "unit": "string"},
+        "square": {"value": "number", "unit": "string"},
+        "other": ["verbatim-string"]
+      },
+      "sku": "verbatim-string"
+    }
+  ]
+}

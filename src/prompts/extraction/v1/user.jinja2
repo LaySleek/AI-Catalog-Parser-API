@@ -1,0 +1,38 @@
+Extract ONLY real product cards from the catalog page.
+
+A valid product card MUST contain ALL of the following:
+- SKU / article number
+- price with numeric value (NOT null)
+- at least one technical specification with numeric value (NOT null)
+
+If ANY of these are missing — do NOT include the product.
+If NO valid products exist on the page — return {"products": []}.
+
+RULES FOR PRODUCT NAME:
+- "name" MUST contain ONLY the generic product category/type
+  (e.g., "Smartphone", "Toilet", "Ceramic tile", "Power drill")
+- The name should answer the question: "What KIND of object is this?"
+- NEVER use model codes, series names, alphanumeric identifiers,
+  or catalog headings as the product name
+- Patterns like "N7-6", "X200 Pro", "ABC-123", "Model XYZ" are NOT names —
+  they belong in "sku"
+- If the page heading looks like "<Letters><Numbers>" or "<Word><Number>",
+  treat it as a model/SKU identifier, NOT as a product name
+- Infer the product type from the image and/or specifications if no
+  explicit category label is present
+
+RULES FOR SKU:
+- "sku" MUST capture all model codes, series identifiers, article numbers,
+  and catalog IDs found on the page
+- If the page heading is alphanumeric (e.g. "N7 6", "T7200"), put it in "sku"
+
+Each "product_center" MUST satisfy:
+- normalized coordinates in range [0.0, 1.0]
+- x and y represent the center of the main product photo ONLY
+- coordinates are relative to full page width and height
+- (0,0) is top-left, (1,1) is bottom-right
+
+EXAMPLES OF CORRECT EXTRACTION:
+Page heading "N7 6", image shows a phone → name: "Smartphone", sku: "N7 6"
+Page heading "TB-2000", image shows a toilet → name: "Toilet", sku: "TB-2000"
+Page heading "ProDrill X5" → name: "Power drill", sku: "ProDrill X5"
