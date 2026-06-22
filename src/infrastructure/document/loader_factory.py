@@ -5,15 +5,11 @@ from src.config.settings import Settings
 from src.domain.entities import CatalogPage
 from src.domain.exceptions import UnsupportedFormatError
 
-from .loaders.pdf_loader import PDFLoader
-from .loaders.pptx_loader import PptxLoader
-from .loaders.word_loader import WordLoader
-from .loaders.excel_loader import ExcelLoader
-from .loaders.image_loader import ImageLoader
+from .loaders import BaseLoader, PDFLoader, PptxLoader, WordLoader, ExcelLoader, ImageLoader
 
 
 class LoaderFactory:
-    """Выбирает загрузчик каталога по расширению файла."""
+    """Фабрика загрузчиков каталогов."""
 
     _EXTENSIONS: dict[str, CatalogFormat] = {
         ".pdf": CatalogFormat.PDF,
@@ -27,7 +23,7 @@ class LoaderFactory:
     }
 
     def __init__(self, settings: Settings | None = None) -> None:
-        self._loaders = {
+        self._loaders: dict[CatalogFormat, BaseLoader] = {
             CatalogFormat.PDF: PDFLoader(settings),
             CatalogFormat.IMAGE: ImageLoader(settings),
             CatalogFormat.EXCEL: ExcelLoader(settings),
@@ -36,6 +32,24 @@ class LoaderFactory:
         }
 
     def load(self, path: Path) -> list[CatalogPage]:
+        """Выбирает загрузчик каталога по расширению файла и загружает
+        страницы каталога.
+        
+        Parameters
+        ----------
+        path : Path
+            Путь к каталогу.
+
+        Returns
+        -------
+        list[CatalogPage]
+            Список страниц каталога.
+
+        Raises
+        ------
+        UnsupportedFormatError
+            Если расширение каталога не поддерживается системой.
+        """
         catalog_format = self._EXTENSIONS.get(path.suffix.lower())
         if catalog_format is None:
             raise UnsupportedFormatError(str(path))
