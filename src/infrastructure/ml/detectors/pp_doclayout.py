@@ -5,8 +5,8 @@ from src.domain.enums import PreprocessProfile
 from src.config.settings import Settings, get_settings
 from src.domain.entities import BBox, CatalogPage
 from src.domain.exceptions import LayoutDetectionError
+from src.infrastructure.ml.preprocessors import ImagePreprocessor
 from src.infrastructure.ml.registry.model_registry import ModelRegistry
-from src.infrastructure.ml.preprocessors.image_preprocessor import ImagePreprocessor
 
 
 class PPDocLayoutDetector:
