@@ -3,20 +3,6 @@ from uuid import UUID
 from pydantic import Field, BaseModel
 
 
-class ProcessCatalogRequest(BaseModel):
-    source_path: str = Field(
-        description="Path to catalog file"
-    )
-    output_path: str | None = Field(
-        default=None,
-        description="Optional output path for nomenclature xlsx",
-    )
-    profile: str | None = Field(
-        default=None,
-        description="Preprocess profile: light, dark, low, dense",
-    )
-
-
 class ProcessCatalogResponse(BaseModel):
     job_id: UUID
     status: str

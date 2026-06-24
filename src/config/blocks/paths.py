@@ -12,6 +12,10 @@ class PathSettings(AppBaseSettings):
         default_factory=lambda: Path(__file__).resolve().parents[3],
         alias="PROJECT_ROOT",
     )
+    catalogs_dir: Path = Field(
+        default=Path("data/catalogs"),
+        alias="CATALOGS_DIR",
+    )
     output_dir: Path = Field(
         default=Path("data/products"),
         alias="OUTPUT_DIR"

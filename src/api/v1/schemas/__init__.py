@@ -1,8 +1,7 @@
-from .catalog import JobStatusResponse, ProcessCatalogRequest, ProcessCatalogResponse
+from .catalog import JobStatusResponse, ProcessCatalogResponse
 from .nomenclature import NomenclatureDownloadResponse
 
 __all__: list[str] = [
-    "ProcessCatalogRequest",
     "ProcessCatalogResponse",
     "JobStatusResponse",
     "NomenclatureDownloadResponse",

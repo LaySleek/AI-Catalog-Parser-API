@@ -1,37 +1,57 @@
-from uuid import UUID
+from uuid import UUID, uuid4
 
-from fastapi import Request, APIRouter, HTTPException, status
+from fastapi import File, Form, Request, APIRouter, UploadFile, HTTPException, status
 
-from src.utils import to_path
 from src.domain.enums import PreprocessProfile
-from src.api.v1.schemas import (
-    JobStatusResponse,
-    ProcessCatalogRequest,
-    ProcessCatalogResponse
-)
-from src.domain.exceptions import CatalogParserError
+from src.api.v1.schemas import JobStatusResponse, ProcessCatalogResponse
+from src.domain.exceptions import CatalogParserError, UnsupportedFormatError
 from src.application.commands import ProcessCatalogCommand
 
 router = APIRouter()
 
 
-@router.post("/process", response_model=ProcessCatalogResponse)
+@router.post(
+    "/process",
+    response_model=ProcessCatalogResponse,
+    summary="Загрузить и поставить каталог в очередь обработки",
+)
 async def process_catalog(
     request: Request,
-    payload: ProcessCatalogRequest,
+    file: UploadFile = File(
+        ...,
+        description="Файл каталога (.pdf, .xlsx, .xls, .docx, .pptx, .png, .jpg, .jpeg)"
+    ),
+    profile: str | None = Form(
+        default=None,
+        description="Профиль предобработки: light, dark, low, dense",
+    ),
 ) -> ProcessCatalogResponse:
+    """Принимает файл каталога, сохраняет его в ``data/catalogs/`` и ставит
+    задачу парсинга в очередь Celery.
+
+    Возвращает ``job_id``.
+    """
+    catalog_storage = request.app.state.catalog_storage
     handler = request.app.state.process_handler
     queue = request.app.state.queue_dispatcher
 
-    profile = (
-        PreprocessProfile(payload.profile)
-        if payload.profile is not None
-        else None
-    )
+    job_id = uuid4()
+
+    try:
+        source_path = await catalog_storage.save(file, job_id)
+
+    except UnsupportedFormatError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from exc
+
+    parsed_profile = PreprocessProfile(profile) if profile is not None else None
+
     command = ProcessCatalogCommand(
-        source_path=to_path(payload.source_path),
-        output_path=to_path(payload.output_path) if payload.output_path else None,
-        profile=profile,
+        job_id=job_id,
+        source_path=source_path,
+        profile=parsed_profile,
     )
 
     try:
@@ -41,7 +61,7 @@ async def process_catalog(
     except CatalogParserError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc)
+            detail=str(exc),
         ) from exc
 
     return ProcessCatalogResponse(job_id=job.id, status=job.status.value)

@@ -10,6 +10,7 @@ from src.application.handlers import (
     ExportNomenclatureHandler
 )
 from src.application.services import QueueDispatcher
+from src.infrastructure.storage import CatalogStorage
 from src.infrastructure.queue.celery_task_queue import CeleryTaskQueue
 
 from .v1 import api_router
@@ -25,20 +26,19 @@ def create_app() -> FastAPI:
     app = FastAPI(title="AI Catalog Parser", lifespan=lifespan)
 
     job_repository = build_job_repository(settings)
-    process_handler = ProcessCatalogHandler(
+
+    app.state.settings = settings
+    app.state.catalog_storage = CatalogStorage(settings)
+    app.state.job_repository = job_repository
+    app.state.process_handler = ProcessCatalogHandler(
         pipeline=build_pipeline(settings),
         job_repository=job_repository,
         settings=settings,
     )
-    queue_dispatcher = QueueDispatcher(
+    app.state.queue_dispatcher = QueueDispatcher(
         task_queue=CeleryTaskQueue(),
         job_repository=job_repository,
     )
-
-    app.state.settings = settings
-    app.state.job_repository = job_repository
-    app.state.process_handler = process_handler
-    app.state.queue_dispatcher = queue_dispatcher
     app.state.export_handler = ExportNomenclatureHandler(job_repository)
     app.state.job_status_handler = GetJobStatusHandler(job_repository)
 
