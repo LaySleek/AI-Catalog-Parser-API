@@ -2,6 +2,7 @@
 .git
 .gitignore
 .gitattributes
+.pre-commit-config.yaml
 
 # Docker
 docker/
