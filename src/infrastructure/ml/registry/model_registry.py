@@ -1,10 +1,10 @@
 import threading
 
 from transformers import (
+    AutoProcessor,
     AutoImageProcessor,
     AutoModelForImageTextToText,
-    AutoModelForObjectDetection,
-    AutoProcessor,
+    AutoModelForObjectDetection
 )
 
 from src.config.settings import Settings, get_settings
@@ -13,7 +13,7 @@ from src.config.settings import Settings, get_settings
 class ModelRegistry:
     """Singleton с ленивой загрузкой моделей."""
 
-    _instance: "ModelRegistry" | None = None
+    _instance: "ModelRegistry | None" = None
     _lock = threading.Lock()
 
     def __init__(self, settings: Settings | None = None) -> None:
