@@ -4,7 +4,7 @@ from pydantic import Field, BaseModel, field_validator
 
 class TorchDtypeMixin(BaseModel):
 
-    dtype: torch.dtype | None = Field(
+    dtype: str | None = Field(
         default=None,
         alias="DTYPE"
     )
@@ -13,7 +13,7 @@ class TorchDtypeMixin(BaseModel):
     @classmethod
     def parse_dtype(cls, v: object) -> torch.dtype | None:
 
-        if v is None or isinstance(v, torch.dtype):
+        if v is None:
             return v
 
         if isinstance(v, str):
