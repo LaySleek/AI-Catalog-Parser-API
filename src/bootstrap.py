@@ -18,12 +18,12 @@ from .infrastructure.ml.translators import NuExtractTranslator
 def build_pipeline(settings: Settings | None = None) -> Pipeline:
     settings = settings or get_settings()
     scheduler = PipelineScheduler(
-        loader=LoaderFactory(settings),
-        extractor=NuExtractExtractor(settings),
-        translator=NuExtractTranslator(settings),
-        detector=PPDocLayoutDetector(settings),
-        image_storage=LocalImageStorage(settings),
-        exporter=ExcelNomenclatureExporter(settings),
+        loader=LoaderFactory(settings=settings),
+        extractor=NuExtractExtractor(settings=settings),
+        translator=NuExtractTranslator(settings=settings),
+        detector=PPDocLayoutDetector(settings=settings),
+        image_storage=LocalImageStorage(settings=settings),
+        exporter=ExcelNomenclatureExporter(settings=settings),
         matcher=ImageMatchingService(),
     )
     return scheduler.pipeline
