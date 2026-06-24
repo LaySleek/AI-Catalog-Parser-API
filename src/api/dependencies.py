@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -11,6 +12,7 @@ from src.application.handlers import (
 )
 from src.application.services import QueueDispatcher
 from src.infrastructure.storage import CatalogStorage
+from src.infrastructure.ml.registry import ModelRegistry
 from src.infrastructure.queue.celery_task_queue import CeleryTaskQueue
 
 from .v1 import api_router
@@ -18,7 +20,16 @@ from .v1 import api_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    registry: ModelRegistry = app.state.model_registry
+    await _warmup_models(registry)
+
     yield
+
+
+async def _warmup_models(registry: ModelRegistry) -> None:
+
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, registry.warmup)
 
 
 def create_app() -> FastAPI:
@@ -26,7 +37,9 @@ def create_app() -> FastAPI:
     app = FastAPI(title="AI Catalog Parser", lifespan=lifespan)
 
     job_repository = build_job_repository(settings)
+    registry = ModelRegistry.get(settings)
 
+    app.state.model_registry = registry
     app.state.settings = settings
     app.state.catalog_storage = CatalogStorage(settings)
     app.state.job_repository = job_repository

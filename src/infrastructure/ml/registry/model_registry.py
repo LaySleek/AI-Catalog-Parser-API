@@ -63,6 +63,12 @@ class ModelRegistry:
         self._ensure_detector()
         return self._detector_processor
 
+    def warmup(self) -> None:
+        """Инициализация всех моделей."""
+        self._ensure_extractor()
+        self._ensure_translator()
+        self._ensure_detector()
+
     def _ensure_extractor(self) -> None:
         """
         Инициализирует модель экстрактора товаров из каталога,
