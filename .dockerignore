@@ -1,0 +1,41 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Docker
+docker/
+.dockerignore
+
+# Python
+**/__pycache__/
+**/*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Tool caches
+.ruff_cache/
+
+# IDE
+.vscode/
+
+# Jupyter
+notebooks/
+.ipynb_checkpoints/
+*.ipynb
+
+# Local environment
+.env
+.env.*
+*.log
+
+# Data
+data/nomenclature/*.xlsx
+!data/nomenclature/template.xlsx
+
+# Documentation
+README.md
