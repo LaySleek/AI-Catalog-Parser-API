@@ -80,7 +80,7 @@ class Specifications:
         kwargs: dict[str, Any] = {}
 
         for field_name in cls._measurement_fields():
-            raw = data.get(field_name, {})
+            raw = data.get(field_name) or {}
             value = raw.get("value")
             unit = raw.get("unit")
 
@@ -95,7 +95,7 @@ class Specifications:
             else:
                 kwargs[field_name] = None
 
-        raw_other = data.get("other", [])
+        raw_other = data.get("other") or []
         kwargs["other"] = tuple(str(s) for s in raw_other if s)
 
         return cls(**kwargs)
