@@ -8,7 +8,10 @@ celery_app = Celery(
     "catalog_parser",
     broker=settings.broker_url,
     backend=settings.result_backend_url,
-    include=["src.infrastructure.queue.tasks"],
+    include=[
+        "src.infrastructure.queue.tasks",
+        "src.infrastructure.queue.callbacks",
+    ],
 )
 
 celery_app.conf.update(
