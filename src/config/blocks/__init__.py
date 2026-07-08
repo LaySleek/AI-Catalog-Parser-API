@@ -1,5 +1,6 @@
 from .api import ApiSettings
 from .pdf import PdfSettings
+from .vllm import VllmSettings
 from .paths import PathSettings
 from .redis import RedisSettings
 from .celery import CelerySettings
@@ -18,4 +19,5 @@ __all__: list[str] = [
     "PromptSettings",
     "RedisSettings",
     "TranslatorSettings",
+    "VllmSettings",
 ]

@@ -6,6 +6,7 @@ from .blocks import (
     ApiSettings,
     PdfSettings,
     PathSettings,
+    VllmSettings,
     RedisSettings,
     CelerySettings,
     PromptSettings,
@@ -20,6 +21,7 @@ class Settings:
     extractor: ExtractorSettings
     detector: DetectorSettings
     translator: TranslatorSettings
+    vllm: VllmSettings
     pdf: PdfSettings
     paths: PathSettings
     api: ApiSettings
@@ -33,6 +35,7 @@ class Settings:
             extractor=ExtractorSettings(),
             detector=DetectorSettings(),
             translator=TranslatorSettings(),
+            vllm=VllmSettings(),
             pdf=PdfSettings(),
             paths=PathSettings(),
             api=ApiSettings(),

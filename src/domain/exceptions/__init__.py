@@ -7,6 +7,7 @@ from .parsing import (
     NoProductsFoundError,
     ProductExtractionError
 )
+from .inference import InferenceError
 
 __all__: list[str] = [
     "CatalogParserError",
@@ -17,4 +18,5 @@ __all__: list[str] = [
     "ProductExtractionError",
     "LayoutDetectionError",
     "ExportError",
+    "InferenceError",
 ]

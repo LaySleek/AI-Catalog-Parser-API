@@ -18,7 +18,7 @@ class ExtractProductsStage(PipelineStageHandler):
     async def execute(self, context: PipelineContext) -> StageResult:
         pages = context.pages or []
 
-        per_page_data: list[list[ProductData]] = self._extractor.extract(pages)
+        per_page_data: list[list[ProductData]] = await self._extractor.extract(pages)
 
         products: list[Product] = []
         parse_errors: list[str] = []

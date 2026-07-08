@@ -14,12 +14,12 @@
         "currency": "currency"
       },
       "specifications": {
-        "length": {"value": "number", "unit": "string"},
-        "width": {"value": "number", "unit": "string"},
-        "height": {"value": "number", "unit": "string"},
-        "weight": {"value": "number", "unit": "string"},
-        "volume": {"value": "number", "unit": "string"},
-        "square": {"value": "number", "unit": "string"},
+        "length": {"value": "number", "unit": "unit-code"},
+        "width": {"value": "number", "unit": "unit-code"},
+        "height": {"value": "number", "unit": "unit-code"},
+        "weight": {"value": "number", "unit": "unit-code"},
+        "volume": {"value": "number", "unit": "unit-code"},
+        "square": {"value": "number", "unit": "unit-code"},
         "other": ["verbatim-string"]
       },
       "sku": "verbatim-string"

@@ -7,7 +7,7 @@ from src.utils import ProductData
 class TranslatorPort(Protocol):
     """Порт перевода карточек товаров на русский язык."""
 
-    def translate(self, products: list[ProductData]) -> list[ProductData]:
+    async def translate(self, products: list[ProductData]) -> list[ProductData]:
         """Переводит список карточек товаров на русский язык.
 
         Parameters

@@ -8,7 +8,7 @@ from src.domain.entities import CatalogPage
 class ProductExtractorPort(Protocol):
     """Порт извлечения карточек товаров из страниц каталога."""
 
-    def extract(self, pages: list[CatalogPage]) -> list[list[ProductData]]:
+    async def extract(self, pages: list[CatalogPage]) -> list[list[ProductData]]:
         """Извлекает карточки товаров из батча страниц каталога.
 
         Parameters

@@ -1,15 +1,14 @@
-import re
 import json
+import asyncio
 
-import torch
 from PIL import Image
 
-from src.utils import ProductData, chunked
+from src.utils import ProductData
 from src.config.settings import Settings, get_settings
 from src.domain.entities import CatalogPage
 from src.prompts.registry import PromptRegistry, get_prompt_registry
-from src.domain.exceptions import ProductExtractionError
-from src.infrastructure.ml.registry.model_registry import ModelRegistry
+from src.domain.exceptions import InferenceError, ProductExtractionError
+from src.infrastructure.ml.clients import VLLMChatClient
 
 
 class NuExtractExtractor:
@@ -17,109 +16,100 @@ class NuExtractExtractor:
 
     def __init__(
         self,
-        registry: ModelRegistry | None = None,
+        client: VLLMChatClient | None = None,
         prompts: PromptRegistry | None = None,
         settings: Settings | None = None,
     ) -> None:
-        self._registry = registry or ModelRegistry.get()
-        self._prompts = prompts or get_prompt_registry()
         self._settings = settings or get_settings()
+        self._client = client or VLLMChatClient(self._settings)
+        self._prompts = prompts or get_prompt_registry()
         self._extractor = self._settings.extractor
+        self._semaphore = asyncio.Semaphore(self._extractor.page_batch_size)
 
-    def extract(self, pages: list[CatalogPage]) -> list[list[ProductData]]:
+    async def extract(self, pages: list[CatalogPage]) -> list[list[ProductData]]:
+        """Извлекает карточки товаров со всех страниц параллельно.
 
+        Parameters
+        ----------
+        pages : list[CatalogPage]
+            Страницы каталога для обработки.
+
+        Returns
+        -------
+        list[list[ProductData]]
+            Список извлечённых карточек товаров для каждой страницы.
+
+        Raises
+        ------
+        InferenceError
+            Если запрос к серверу vLLM завершился ошибкой.
+        ProductExtractionError
+            Если модель вернула невалидный JSON для какой-либо страницы.
+        """
         if not pages:
             return []
 
-        per_page: list[list[ProductData]] = []
+        return list(
+            await asyncio.gather(*(self._extract_page(page) for page in pages))
+        )
 
-        for page_batch in chunked(pages, self._extractor.page_batch_size):
-            images = [Image.fromarray(page.image) for page in page_batch]
-            raw_outputs = self._run_vlm(images)
+    async def _extract_page(self, page: CatalogPage) -> list[ProductData]:
 
-            for page, raw in zip(page_batch, raw_outputs):
-                try:
-                    parsed = json.loads(raw)
+        async with self._semaphore:
+            raw = await self._run_vlm(page)
 
-                except json.JSONDecodeError as exc:
-                    raise ProductExtractionError(
-                        page_number=page.page_number,
-                        raw_output=raw,
-                    ) from exc
+        try:
+            parsed = json.loads(raw)
 
-                products = parsed.get("products") or []
-                per_page.append(products)
+        except json.JSONDecodeError as exc:
+            raise ProductExtractionError(
+                page_number=page.page_number,
+                raw_output=raw,
+            ) from exc
 
-        return per_page
+        return parsed.get("products") or []
 
-    def _run_vlm(self, images: list[Image.Image]) -> list[str]:
+    async def _run_vlm(self, page: CatalogPage) -> list[str]:
         """Запускает визуально-лингвистическую модель для извлечения
         карточек товаров со страниц каталога по заданному шаблону.
 
         Parameters
         ----------
-        images : list[Image.Image]
-            Список изображений страниц каталога.
+        page : CatalogPage
+            Страница каталога.
 
         Returns
         -------
-        list[str]
-            Список карточек товаров, найденных на страницах каталога.
+        str
+            JSON-ответ модели.
         """
         prompt = self._prompts.load_extraction_text("user.jinja2")
         template = self._prompts.load_extraction_template()
+        data_url = self._client.image_to_data_url(Image.fromarray(page.image))
 
         messages = [
-            [
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "image", "image": image},
-                        {"type": "text", "text": prompt},
-                    ],
-                }
-            ]
-            for image in images
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": data_url}
+                    },
+                ],
+            }
         ]
 
-        processor = self._registry.extractor_processor
-        model = self._registry.extractor
-
-        inputs = processor.apply_chat_template(
-            messages,
-            add_generation_prompt=True,
-            tokenize=True,
-            return_dict=True,
-            return_tensors="pt",
-            enable_thinking=self._extractor.enable_thinking,
-            template=json.dumps(template, indent=4),
-            padding=True,
-        ).to(model.device)
-
-        with torch.inference_mode():
-            generated_ids = model.generate(
-                **inputs,
-                max_new_tokens=self._extractor.max_new_tokens,
-                do_sample=False,
+        try:
+            return await self._client.complete(
+                model=self._settings.extractor.model_id,
+                messages=messages,
+                max_tokens=self._extractor.max_new_tokens,
+                template=template,
+                prompt=prompt,
+                enable_thinking=self._extractor.enable_thinking,
             )
-
-        generated_ids = generated_ids[:, inputs.input_ids.shape[1]:]
-        outputs: list[str] = processor.batch_decode(
-            generated_ids,
-            skip_special_tokens=True,
-            clean_up_tokenization_spaces=False,
-        )
-
-        # Удаление токенов рассуждения из ответа
-        if self._extractor.enable_thinking:
-            outputs = [
-                re.sub(
-                    pattern=r'.*?</think>',
-                    repl='',
-                    string=output,
-                    flags=re.DOTALL,
-                )
-                for output in outputs
-            ]
-
-        return [output.strip() for output in outputs]
+        except Exception as exc:
+            raise InferenceError(
+                model=self._settings.extractor.model_id,
+                reason=str(exc),
+            ) from exc

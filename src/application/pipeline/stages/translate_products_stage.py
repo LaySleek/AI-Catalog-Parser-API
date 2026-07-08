@@ -18,7 +18,7 @@ class TranslateProductsStage(PipelineStageHandler):
     async def execute(self, context: PipelineContext) -> StageResult:
         products = context.extracted_products or []
 
-        translated_raw: list[ProductData] = self._translator.translate(
+        translated_raw: list[ProductData] = await self._translator.translate(
             [p.to_dict() for p in products]
         )
         context.translated_products = [

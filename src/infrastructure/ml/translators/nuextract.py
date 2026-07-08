@@ -1,12 +1,11 @@
-import re
 import json
+import asyncio
 
-import torch
-
-from src.utils import ProductData, chunked
+from src.utils import ProductData
 from src.config.settings import Settings, get_settings
 from src.prompts.registry import PromptRegistry, get_prompt_registry
-from src.infrastructure.ml.registry import ModelRegistry
+from src.domain.exceptions import InferenceError
+from src.infrastructure.ml.clients import VLLMChatClient
 
 
 class NuExtractTranslator:
@@ -14,102 +13,76 @@ class NuExtractTranslator:
 
     def __init__(
         self,
-        registry: ModelRegistry | None = None,
+        client: VLLMChatClient | None = None,
         prompts: PromptRegistry | None = None,
         settings: Settings | None = None,
     ) -> None:
-        self._registry = registry or ModelRegistry.get()
-        self._prompts = prompts or get_prompt_registry()
         self._settings = settings or get_settings()
+        self._client = client or VLLMChatClient(self._settings)
+        self._prompts = prompts or get_prompt_registry()
         self._translator = self._settings.translator
+        self._semaphore = asyncio.Semaphore(self._translator.product_batch_size)
 
-    def translate(self, products: list[ProductData]) -> list[ProductData]:
-        if not products:
-            return []
-
-        translated: list[ProductData] = []
-
-        for product_batch in chunked(products, self._translator.product_batch_size):
-            raw_outputs = self._run_translator(product_batch)
-
-            for raw in raw_outputs:
-                parsed = json.loads(raw)
-                page_products = parsed.get("products") or []
-                translated.append(page_products[0] if page_products else parsed)
-
-        return translated
-
-    def _run_translator(self, products: list[ProductData]) -> list[str]:
-        """Запускает визуально-лингвистическую модель для перевода информации с
-        карточек товаров на русский язык по заданному шаблону.
+    async def translate(self, products: list[ProductData]) -> list[ProductData]:
+        """Переводит карточки товаров на русский язык параллельно.
 
         Parameters
         ----------
         products : list[ProductData]
-            Список карточек товаров.
+            Карточки товаров, извлечённые `NuExtractExtractor`.
 
         Returns
         -------
-        list[str]
-            Список переведенных карточек товаров.
+        list[ProductData]
+            Переведённые карточки товаров в исходном порядке.
+
+        Raises
+        ------
+        InferenceError
+            Если запрос к серверу vLLM завершился ошибкой.
         """
+        if not products:
+            return []
+
+        return list(
+            await asyncio.gather(*(self._translate_one(p) for p in products))
+        )
+
+    async def _translate_one(self, product: ProductData) -> ProductData:
+        async with self._semaphore:
+            raw = await self._run_vlm(product)
+
+        parsed = json.loads(raw)
+        translated_products = parsed.get("products") or []
+        return translated_products[0] if translated_products else parsed
+
+    async def _run_vlm(self, product: ProductData) -> str:
         prompt = self._prompts.load_translation_text("user.jinja2")
         template = self._prompts.load_translation_template()
 
         messages = [
-            [
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": prompt},
-                        {
-                            "type": "text",
-                            "text": json.dumps(product, ensure_ascii=False, indent=2),
-                        },
-                    ],
-                }
-            ]
-            for product in products
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": json.dumps(product, ensure_ascii=False, indent=2),
+                    },
+                ],
+            }
         ]
 
-        processor = self._registry.translator_processor
-        model = self._registry.translator
-
-        inputs = processor.apply_chat_template(
-            messages,
-            add_generation_prompt=True,
-            tokenize=True,
-            return_dict=True,
-            return_tensors="pt",
-            enable_thinking=self._translator.enable_thinking,
-            template=json.dumps(template, indent=4),
-            padding=True,
-        ).to(model.device)
-
-        with torch.inference_mode():
-            generated_ids = model.generate(
-                **inputs,
-                max_new_tokens=self._translator.max_new_tokens,
-                do_sample=False,
+        try:
+            return await self._client.complete(
+                model=self._translator.model_id,
+                messages=messages,
+                prompt=prompt,
+                max_tokens=self._translator.max_new_tokens,
+                template=template,
+                enable_thinking=self._translator.enable_thinking,
             )
-
-        generated_ids = generated_ids[:, inputs.input_ids.shape[1]:]
-        outputs = processor.batch_decode(
-            generated_ids,
-            skip_special_tokens=True,
-            clean_up_tokenization_spaces=False,
-        )
-
-        # Удаление токенов рассуждения из ответа
-        if self._translator.enable_thinking:
-            outputs = [
-                re.sub(
-                    r".*?</think>",
-                    "",
-                    output,
-                    flags=re.DOTALL,
-                )
-                for output in outputs
-            ]
-
-        return [output.strip() for output in outputs]
+        except Exception as exc:
+            raise InferenceError(
+                model=self._translator.model_id,
+                reason=str(exc),
+            ) from exc

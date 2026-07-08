@@ -1,26 +1,21 @@
 from pydantic import Field
 
 from src.config.base import AppBaseSettings
-from src.config.mixins import TorchDtypeMixin
 
 
-class TranslatorSettings(TorchDtypeMixin, AppBaseSettings):
+class TranslatorSettings(AppBaseSettings):
     """Настройки модели перевода."""
 
-    model_device: str = Field(
-        default="auto",
-        alias="MODEL_DEVICE"
-    )
     model_id: str = Field(
         default="numind/NuExtract3",
-        alias="TRANSLATOR_MODEL_ID"
+        alias="TRANSLATOR_MODEL_ID",
     )
     enable_thinking: bool = Field(
         default=True,
         alias="TRANSLATOR_ENABLE_THINKING"
     )
-    max_new_tokens: int = Field(
-        default=4096,
+    max_new_tokens: int | None = Field(
+        default=None,
         alias="TRANSLATOR_MAX_NEW_TOKENS"
     )
     product_batch_size: int = Field(
