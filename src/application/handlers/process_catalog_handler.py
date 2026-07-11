@@ -24,7 +24,7 @@ class ProcessCatalogHandler(ProcessCatalogUseCase):
 
         output_path = command.output_path or (
             self._settings.resolve_path(self._settings.paths.nomenclature_dir)
-            / f"{command.job_id}.xlsx"
+            / f"{command.job_id}.zip"
         )
 
         job = PipelineJob(

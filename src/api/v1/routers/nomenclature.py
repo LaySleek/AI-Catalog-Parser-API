@@ -11,6 +11,7 @@ router = APIRouter()
 
 @router.get("/{job_id}/download")
 async def download_nomenclature(request: Request, job_id: UUID) -> FileResponse:
+    """Скачивает ZIP-архив с номенклатурой и изображениями товаров."""
     handler = request.app.state.export_handler
 
     try:
@@ -19,23 +20,23 @@ async def download_nomenclature(request: Request, job_id: UUID) -> FileResponse:
     except KeyError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(exc)
+            detail=str(exc),
         ) from exc
 
     except ExportError as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(exc)
+            detail=str(exc),
         ) from exc
 
     if not export_path.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Export file not found"
+            detail="Export file not found",
         )
 
     return FileResponse(
         path=export_path,
         filename=export_path.name,
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        media_type="application/zip",
     )
